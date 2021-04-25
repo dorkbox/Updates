@@ -21,6 +21,7 @@
 package dorkbox
 
 import dorkbox.updates.Updates
+import org.junit.Test
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -29,4 +30,11 @@ fun main() {
     Thread.sleep(TimeUnit.MINUTES.toMillis(5))
 }
 
-class TestB {}
+class TestB {
+    @Test
+    fun uuid() {
+//        Updates.DEBUG = true  // requires GradleUtils.allowKotlinInternalAccessForTests
+        Updates.add(TestB::class.java, UUID.randomUUID().toString().replace("-", ""), "121.0")
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5))
+    }
+}

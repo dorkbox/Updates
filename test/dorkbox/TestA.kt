@@ -25,6 +25,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 fun main() {
+    Updates.DEBUG = true
     Updates.add(TestA::class.java, UUID.randomUUID().toString().replace("-", ""), "121.0")
     Thread.sleep(TimeUnit.MINUTES.toMillis(5))
 }
