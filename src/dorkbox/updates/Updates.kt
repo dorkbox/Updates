@@ -50,6 +50,8 @@ object Updates {
 
         // this is the INSTANCE UUID of the currently running process
         buffer.append(instanceUuid)
+        buffer.append(':')
+        buffer.append(version)
 
         synchronized(updates) {
             val entries = updates.entries
@@ -201,14 +203,28 @@ object Updates {
     /**
      * Verifies this class + UUID + version information with the update server.
      *
-     * Only the class + UUID + version information is tracked, saved, and used by dorkbox, llc. Nothing else.
+     * What is used?
+     *   + class
+     *   + UUID
+     *   + version
+     *   This information is tracked, saved, and used by dorkbox, llc. Nothing else. This data is not shared or used by any entity
+     *   other than dorkbox, llc - and it is used and processed on-premises.
      *
-     * Specifically, IP address/machine info/time/http headers/user info/names/etc is not used, saved, or tracked.
+     * What is NOT used?
+     *  + IP address
+     *  + machine info
+     *  + cookies
+     *  + time
+     *  + http headers
+     *  + user info
+     *  + names
+     *  + etc
+     *  This (non-exhaustive list) is not used, saved, processed, or tracked by anyone. This information thrown out on ingress.
      *
      * In accordance with the GDPR, there is absolutely NO DATA specific to the machine, connection, or user that is saved, read or used.
      *
      * While this is trivial to override/modify/replace to do absolutely nothing, the purpose of this is to manage the update info
-     * and usage across all projects and systems owned by dorkbox, llc.
+     * and usage across all projects and systems using dorkbox technologies.
      *
      * @param class the class that is to be registered
      * @param uuid the uuid assigned to the class
