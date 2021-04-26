@@ -1,13 +1,12 @@
 package dorkbox.updates
 
-import dorkbox.propertyLoader.Property
 import java.io.DataOutputStream
+import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.fixedRateTimer
 
 
 object Updates {
@@ -18,11 +17,24 @@ object Updates {
     }
 
     /**
-     * Enables the use of the update system, which verifies this class + UUID + data information with the update server.
+     * Gets the version number.
      */
-    @Property
+    const val version = "1.1"
+
+    /**
+     * Enables the use of the update system, which verifies this class + UUID + data information with the update server.
+     *
+     * If not manually set, it will compare the System Property 'dorkbox.Updates.ENABLED' to the value 'true'. Any other value
+     * will disable the update loop
+     */
     @Volatile
-    var ENABLE = true
+    var ENABLE = try { System.getProperty("${Updates::class.qualifiedName}.ENABLE", "true") == "true" } catch (e: Exception) { true }
+
+    /**
+     * Enables output for debugging
+     */
+    @Volatile
+    internal var DEBUG = false
 
     private var SERVER = "updates.dorkbox.com"
 
@@ -32,17 +44,11 @@ object Updates {
     // This runs max 1x every 4 hours (5 minutes after startup) - and only a SINGLE request is made for all checked UUIDs.
     private val updates = mutableMapOf<Class<*>, MutableList<UpdateInfo>>()
 
-    init {
-        fixedRateTimer("update-system", true, TimeUnit.MINUTES.toMillis(5), TimeUnit.HOURS.toMillis(4)) {
-            if (ENABLE) {
-                runAtTimedInterval()
-            }
-        }
-    }
-
     private fun runAtTimedInterval() {
         // convert the hashmap into something serialized. This is super, super simple and not optimized. Again, no dependencies!
         val buffer = StringBuilder()
+
+        // this is the INSTANCE UUID of the currently running process
         buffer.append(instanceUuid)
 
         synchronized(updates) {
@@ -52,7 +58,7 @@ object Updates {
             }
 
             entries.forEachIndexed { i, (key, value) ->
-                buffer.append(key.name) // classNameOnly
+                buffer.append(key.name) // registered class name only, ie: 'dorkbox.TestA'
                 buffer.append('[')
                 value.forEachIndexed { j, it ->
                     buffer.append(it)
@@ -68,7 +74,11 @@ object Updates {
             }
         }
 
-        val sendData = buffer.toString().toByteArray()
+        val toString = buffer.toString()
+        if (DEBUG) {
+            println("Update string: $toString")
+        }
+        val sendData = toString.toByteArray()
 
         // default is http! This way we don't have to deal with crypto, and since there is nothing PRIVATE about the connection,
         // this is fine - at least for now. We DO want to support redirects, in case OLD code is running in the wild.
@@ -85,7 +95,9 @@ object Updates {
             visited[location] = visitedCount
 
             if (visitedCount > 3)  {
-//                println("Stuck in a loop")
+                if (DEBUG) {
+                    println("Stuck in a loop for $location")
+                }
                 return
             }
 
@@ -96,7 +108,7 @@ object Updates {
                     doOutput = true
                     useCaches = false
                     instanceFollowRedirects = true
-                    setRequestProperty("User-Agent", "Dorkbox-Updates")
+                    setRequestProperty("User-Agent", "Dorkbox-Updater")
                     setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
                     setRequestProperty("charset", "utf-8")
                     setRequestProperty("Content-Length", sendData.size.toString())
@@ -106,48 +118,88 @@ object Updates {
                         it.write(sendData)
                     }
 
-//                    println("URL : $url")
-//                    println("Response Code : $responseCode")
+                    if (DEBUG) {
+                        println("Requesting URL : $url")
+                        println("Response Code : $responseCode")
+                    }
 
                     when (responseCode) {
                         HttpURLConnection.HTTP_MOVED_PERM, HttpURLConnection.HTTP_MOVED_TEMP -> {
                             location = getHeaderField("Location")
                             location = URLDecoder.decode(location, "UTF-8")
 
-//                            println("Response redirect to: $location")
+                            if (DEBUG) {
+                                println("Response to '$url' redirected to  '$location'")
+                            }
 
                             next = URL(base, location) // Deal with relative URLs
                             location = next.toExternalForm()
                             return@with
                         }
                         HttpURLConnection.HTTP_OK -> {
-//                            InputStreamReader(inputStream).useLines {
-//                                it.forEach {
-//                                    println("Response : $it")
-//                                }
-//                            }
+                            if (DEBUG) {
+                                InputStreamReader(inputStream).useLines { line ->
+                                    line.forEach {
+                                        println("Response : $it")
+                                    }
+                                }
+                            }
 
                             // done
                             return
                         }
                         else -> {
-//                            println("Response error: $location")
+                            if (DEBUG) {
+                                println("Response error: $location")
+                            }
+
                             // done
                             return
                         }
                     }
                 }
             } catch (e: Exception) {
-//                e.printStackTrace()
+                if (DEBUG) {
+                    e.printStackTrace()
+                }
             }
         }
     }
 
-    
+    private fun initThread() {
+        val t = Thread {
+            if (DEBUG) {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(5))
+            } else {
+                Thread.sleep(TimeUnit.MINUTES.toMillis(5))
+            }
+
+            // give time on startup to configure the ENABLE flag
+            if (!ENABLE) {
+                return@Thread
+            }
+
+            while (true) {
+                try {
+                    runAtTimedInterval()
+                    Thread.sleep(TimeUnit.HOURS.toMillis(4))
+                } catch (e: Exception) {
+                    if (DEBUG) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+
+        t.isDaemon = true
+        t.name = "Maintenance Updates"
+        t.priority = Thread.MIN_PRIORITY // lowest priority is fine for us
+
+        t.start()
+    }
     
     /**
      * Verifies this class + UUID + version information with the update server.
-     *
      *
      * Only the class + UUID + version information is tracked, saved, and used by dorkbox, llc. Nothing else.
      *
@@ -163,9 +215,16 @@ object Updates {
      * @param data any extra data specific to the class
      */
     fun add(`class`: Class<*>, uuid: String, data: String) {
-        val updateInfo = UpdateInfo(uuid, data)
+        if (DEBUG) {
+            println("Adding ${`class`.name} $uuid, $data")
+        }
 
+        val updateInfo = UpdateInfo(uuid, data)
         synchronized(updates) {
+            if (updates.isEmpty()) {
+                initThread();
+            }
+
             var mutableList = updates[`class`]
 
             if (mutableList == null) {
