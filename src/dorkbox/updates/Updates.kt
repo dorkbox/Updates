@@ -10,12 +10,6 @@ import java.util.concurrent.TimeUnit
 
 
 object Updates {
-    data class UpdateInfo(val uuid: String, val data: String) {
-        override fun toString(): String {
-            return "$uuid:$data"
-        }
-    }
-
     /**
      * Gets the version number.
      */
@@ -36,13 +30,67 @@ object Updates {
     @Volatile
     internal var DEBUG = false
 
-    private var SERVER = "updates.dorkbox.com"
 
+    private const val server = "updates.dorkbox.com"
     private val instanceUuid = UUID.randomUUID().toString().replace("-", "")
 
     // create a map of all UUIDs. and only run an update once all have been collected.
     // This runs max 1x every 4 hours (5 minutes after startup) - and only a SINGLE request is made for all checked UUIDs.
     private val updates = mutableMapOf<Class<*>, MutableList<UpdateInfo>>()
+
+    /**
+     * Verifies this class + UUID + version information with the update server.
+     *
+     * What is used?
+     *   + class
+     *   + UUID
+     *   + version
+     *   This information is tracked, saved, and used by dorkbox, llc. Nothing else. This data is not shared or used by any entity
+     *   other than dorkbox, llc - and it is used and processed on-premises.
+     *
+     * What is NOT used?
+     *  + IP address
+     *  + machine info
+     *  + cookies
+     *  + time
+     *  + http headers
+     *  + user info
+     *  + names
+     *  + etc
+     *  This (non-exhaustive list) is not used, saved, processed, or tracked by anyone. This information thrown out on ingress.
+     *
+     * In accordance with the GDPR, there is absolutely NO DATA specific to the machine, connection, or user that is saved, read or used.
+     *
+     * While this is trivial to override/modify/replace to do absolutely nothing, the purpose of this is to manage the update info
+     * and usage across all projects and systems using dorkbox technologies.
+     *
+     * @param class the class that is to be registered
+     * @param uuid the uuid assigned to the class
+     * @param data any extra data specific to the class
+     */
+    fun add(`class`: Class<*>, uuid: String, data: String) {
+        if (DEBUG) {
+            println("Adding ${`class`.name} $uuid, $data")
+        }
+
+        val updateInfo = UpdateInfo(uuid, data)
+        synchronized(updates) {
+            if (updates.isEmpty()) {
+                initThread();
+            }
+
+            var mutableList = updates[`class`]
+
+            if (mutableList == null) {
+                mutableList = mutableListOf()
+                updates[`class`] = mutableList
+            }
+
+            if (!mutableList.contains(updateInfo)) {
+                mutableList.add(updateInfo)
+            }
+        }
+    }
 
     private fun runAtTimedInterval() {
         // convert the hashmap into something serialized. This is super, super simple and not optimized. Again, no dependencies!
@@ -84,7 +132,7 @@ object Updates {
 
         // default is http! This way we don't have to deal with crypto, and since there is nothing PRIVATE about the connection,
         // this is fine - at least for now. We DO want to support redirects, in case OLD code is running in the wild.
-        var location = "http://$SERVER/"
+        var location = "http://$server/"
 
         var base: URL
         var next: URL
@@ -199,58 +247,10 @@ object Updates {
 
         t.start()
     }
-    
-    /**
-     * Verifies this class + UUID + version information with the update server.
-     *
-     * What is used?
-     *   + class
-     *   + UUID
-     *   + version
-     *   This information is tracked, saved, and used by dorkbox, llc. Nothing else. This data is not shared or used by any entity
-     *   other than dorkbox, llc - and it is used and processed on-premises.
-     *
-     * What is NOT used?
-     *  + IP address
-     *  + machine info
-     *  + cookies
-     *  + time
-     *  + http headers
-     *  + user info
-     *  + names
-     *  + etc
-     *  This (non-exhaustive list) is not used, saved, processed, or tracked by anyone. This information thrown out on ingress.
-     *
-     * In accordance with the GDPR, there is absolutely NO DATA specific to the machine, connection, or user that is saved, read or used.
-     *
-     * While this is trivial to override/modify/replace to do absolutely nothing, the purpose of this is to manage the update info
-     * and usage across all projects and systems using dorkbox technologies.
-     *
-     * @param class the class that is to be registered
-     * @param uuid the uuid assigned to the class
-     * @param data any extra data specific to the class
-     */
-    fun add(`class`: Class<*>, uuid: String, data: String) {
-        if (DEBUG) {
-            println("Adding ${`class`.name} $uuid, $data")
-        }
 
-        val updateInfo = UpdateInfo(uuid, data)
-        synchronized(updates) {
-            if (updates.isEmpty()) {
-                initThread();
-            }
-
-            var mutableList = updates[`class`]
-
-            if (mutableList == null) {
-                mutableList = mutableListOf()
-                updates[`class`] = mutableList
-            }
-
-            if (!mutableList.contains(updateInfo)) {
-                mutableList.add(updateInfo)
-            }
+    data class UpdateInfo(val uuid: String, val data: String) {
+        override fun toString(): String {
+            return "$uuid:$data"
         }
     }
 }
