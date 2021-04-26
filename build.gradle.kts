@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import dorkbox.gradle.kotlin
 import java.time.Instant
 
 ///////////////////////////////
@@ -24,15 +23,12 @@ import java.time.Instant
 ///////////////////////////////
 
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
-gradle.startParameter.warningMode = WarningMode.All
 
 plugins {
-    java
-
-    id("com.dorkbox.GradleUtils") version "1.17"
-    id("com.dorkbox.Licensing") version "2.5.5"
+    id("com.dorkbox.GradleUtils") version "2.6"
+    id("com.dorkbox.Licensing") version "2.6.1"
     id("com.dorkbox.VersionUpdate") version "2.3"
-    id("com.dorkbox.GradlePublish") version "1.10"
+    id("com.dorkbox.GradlePublish") version "1.11"
 
     kotlin("jvm") version "1.4.32"
 }
@@ -41,7 +37,7 @@ object Extras {
     // set for the project
     const val description = "Software Update Management"
     const val group = "com.dorkbox"
-    const val version = "1.0"
+    const val version = "1.1"
 
     // set as project.ext
     const val name = "Updates"
@@ -53,13 +49,20 @@ object Extras {
     val buildDate = Instant.now().toString()
 }
 
+
 ///////////////////////////////
 /////  assign 'Extras'
 ///////////////////////////////
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
-GradleUtils.fixIntellijPaths()
-GradleUtils.defaultResolutionStrategy()
+GradleUtils.defaults()
 GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
+GradleUtils.jpms(JavaVersion.VERSION_1_9)
+
+// this will show warnings, but this is necessary if we want access
+//GradleUtils.allowKotlinInternalAccessForTests("kotlin",
+//    dorkbox.gradle.StaticMethodsAndTools.AccessGroup(j9.mainX.name, j9.main.name),
+//    dorkbox.gradle.StaticMethodsAndTools.AccessGroup(j9.testX.name, j9.mainX.name, j9.main.name)
+//)
 
 licensing {
     license(License.APACHE_2) {
@@ -67,31 +70,6 @@ licensing {
         author(Extras.vendor)
         url(Extras.url)
     }
-}
-
-sourceSets {
-    main {
-        kotlin {
-            setSrcDirs(listOf("src"))
-
-            // want to add files for the source. 'setSrcDirs' resets includes...
-            include("**/*.kt")
-        }
-    }
-
-    test {
-        kotlin {
-            setSrcDirs(listOf("test"))
-
-            // want to add files for the source. 'setSrcDirs' resets includes...
-            include("**/*.kt")
-        }
-    }
-}
-
-repositories {
-    mavenLocal() // this must be first!
-    jcenter()
 }
 
 tasks.jar.get().apply {
@@ -106,16 +84,13 @@ tasks.jar.get().apply {
         attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
         attributes["Implementation-Version"] = Extras.buildDate
         attributes["Implementation-Vendor"] = Extras.vendor
-
-        attributes["Automatic-Module-Name"] = Extras.id
     }
 }
 
 dependencies {
-    // MINIMAL DEPENDENCIES!
-    implementation("com.dorkbox:PropertyLoader:1.0")
+    // NO DEPENDENCIES!
+    testImplementation("junit:junit:4.13.2")
 }
-
 
 publishToSonatype {
     groupId = Extras.group
