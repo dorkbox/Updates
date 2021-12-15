@@ -76,7 +76,7 @@ object Updates {
         val updateInfo = UpdateInfo(uuid, data)
         synchronized(updates) {
             if (updates.isEmpty()) {
-                initThread();
+                initThread()
             }
 
             var mutableList = updates[`class`]
