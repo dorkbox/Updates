@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2023 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import java.time.Instant
 
 ///////////////////////////////
 //////    PUBLISH TO SONATYPE / MAVEN CENTRAL
@@ -25,12 +24,12 @@ import java.time.Instant
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "2.16"
-    id("com.dorkbox.Licensing") version "2.10"
-    id("com.dorkbox.VersionUpdate") version "2.4"
-    id("com.dorkbox.GradlePublish") version "1.12"
+    id("com.dorkbox.GradleUtils") version "3.17"
+    id("com.dorkbox.Licensing") version "2.22"
+    id("com.dorkbox.VersionUpdate") version "2.8"
+    id("com.dorkbox.GradlePublish") version "1.18"
 
-    kotlin("jvm") version "1.4.32"
+    kotlin("jvm") version "1.8.0"
 }
 
 object Extras {
@@ -45,8 +44,6 @@ object Extras {
     const val vendor = "Dorkbox LLC"
     const val vendorUrl = "https://dorkbox.com"
     const val url = "https://git.dorkbox.com/dorkbox/Updates"
-
-    val buildDate = Instant.now().toString()
 }
 
 ///////////////////////////////
@@ -81,7 +78,7 @@ tasks.jar.get().apply {
         attributes["Specification-Vendor"] = Extras.vendor
 
         attributes["Implementation-Title"] = "${Extras.group}.${Extras.id}"
-        attributes["Implementation-Version"] = Extras.buildDate
+        attributes["Implementation-Version"] = GradleUtils.now()
         attributes["Implementation-Vendor"] = Extras.vendor
     }
 }
