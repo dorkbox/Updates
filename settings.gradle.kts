@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+rootProject.name = "Updates"
 
 // awful hack in settings.grade to reflectively enable logging
 //val LoggerFactory = Class.forName("org.slf4j.LoggerFactory")
