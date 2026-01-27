@@ -30,7 +30,7 @@ object Updates {
     /**
      * Gets the version number.
      */
-    const val version = "1.1"
+    const val version = "1.2"
 
     /**
      * Enables the use of the update system, which verifies this class + UUID + data information with the update server.
