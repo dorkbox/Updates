@@ -1,12 +1,29 @@
+/*
+ * Copyright 2026 dorkbox, llc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package dorkbox.updates
 
 import java.io.DataOutputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 import java.net.URLDecoder
 import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 
 object Updates {
@@ -22,7 +39,7 @@ object Updates {
      * will disable the update loop
      */
     @Volatile
-    var ENABLE = try { System.getProperty("${Updates::class.qualifiedName}.ENABLE", "true") == "true" } catch (e: Exception) { true }
+    var ENABLE = try { System.getProperty("${Updates::class.qualifiedName}.ENABLE", "true") == "true" } catch (_: Exception) { true }
 
     /**
      * Enables output for debugging
@@ -152,7 +169,7 @@ object Updates {
             }
 
             try {
-                base = URL(location)
+                base = URI(location).toURL()
                 with(base.openConnection() as HttpURLConnection) {
                     requestMethod = "POST"
                     doOutput = true
@@ -182,7 +199,7 @@ object Updates {
                                 println("Response to '$url' redirected to  '$location'")
                             }
 
-                            next = URL(base, location) // Deal with relative URLs
+                            next = URI(location).toURL() // Deal with relative URLs
                             location = next.toExternalForm()
                             return@with
                         }

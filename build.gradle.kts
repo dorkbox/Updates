@@ -24,12 +24,12 @@
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "3.18"
-    id("com.dorkbox.Licensing") version "2.22"
-    id("com.dorkbox.VersionUpdate") version "2.8"
-    id("com.dorkbox.GradlePublish") version "1.22"
+    id("com.dorkbox.GradleUtils") version "4.3"
+    id("com.dorkbox.Licensing") version "3.1"
+    id("com.dorkbox.VersionUpdate") version "3.0"
+    id("com.dorkbox.GradlePublish") version "2.0"
 
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "2.3.0"
 }
 
 object Extras {
@@ -51,14 +51,7 @@ object Extras {
 ///////////////////////////////
 GradleUtils.load("$projectDir/../../gradle.properties", Extras)
 GradleUtils.defaults()
-GradleUtils.compileConfiguration(JavaVersion.VERSION_1_8)
-GradleUtils.jpms(JavaVersion.VERSION_1_9)
-
-// this will show warnings, but this is necessary if we want access
-//GradleUtils.allowKotlinInternalAccessForTests("kotlin",
-//    dorkbox.gradle.StaticMethodsAndTools.AccessGroup(j9.mainX.name, j9.main.name),
-//    dorkbox.gradle.StaticMethodsAndTools.AccessGroup(j9.testX.name, j9.mainX.name, j9.main.name)
-//)
+GradleUtils.compileConfiguration(JavaVersion.VERSION_25)
 
 licensing {
     license(License.APACHE_2) {
@@ -88,7 +81,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 }
 
-publishToSonatype {
+mavenCentral {
     groupId = Extras.group
     artifactId = Extras.id
     version = Extras.version
