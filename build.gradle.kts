@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 dorkbox, llc
+ * Copyright 2026 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS   // always show the stacktrace!
 
 plugins {
-    id("com.dorkbox.GradleUtils") version "4.3"
+    id("com.dorkbox.GradleUtils") version "4.4"
     id("com.dorkbox.Licensing") version "3.1"
     id("com.dorkbox.VersionUpdate") version "3.0"
     id("com.dorkbox.GradlePublish") version "2.0"
@@ -36,7 +36,7 @@ object Extras {
     // set for the project
     const val description = "Software Update Management"
     const val group = "com.dorkbox"
-    const val version = "1.2"
+    const val version = "1.3"
 
     // set as project.ext
     const val name = "Updates"
