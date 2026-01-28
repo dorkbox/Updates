@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2026 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,21 @@
 
 package dorkbox
 
+import dorkbox.updates.Updates
 import org.junit.Test
 import java.util.*
+import java.util.concurrent.*
 
-class UpdateTest {
-    @Test
-    fun uuid() {
-        println(UUID.randomUUID().toString().replace("-", ""))
-    }
+fun main() {
+    Updates.add(TestB::class.java, UUID.randomUUID().toString().replace("-", ""), "121.0")
+    Thread.sleep(TimeUnit.MINUTES.toMillis(5))
 }
 
+class TestB {
+    @Test
+    fun uuid() {
+//        Updates.DEBUG = true  // requires GradleUtils.allowKotlinInternalAccessForTests
+        Updates.add(TestB::class.java, UUID.randomUUID().toString().replace("-", ""), "121.0")
+        Thread.sleep(TimeUnit.SECONDS.toMillis(5))
+    }
+}

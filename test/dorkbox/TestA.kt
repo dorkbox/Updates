@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 dorkbox, llc
+ * Copyright 2026 dorkbox, llc
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-// https://youtrack.jetbrains.com/issue/KT-35343
-// for now, this is a bug with intellij. Doing this will suppress errors in intellij. This is not a problem for gradle
-//@file:Suppress("JAVA_MODULE_DOES_NOT_READ_UNNAMED_MODULE")
-
 package dorkbox
 
 import dorkbox.updates.Updates
 import java.util.*
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 fun main() {
     Updates.DEBUG = true
